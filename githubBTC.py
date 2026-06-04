@@ -218,18 +218,15 @@ def execute_trading_logic():
         usdt_balance, btc_balance = get_spot_balances()
         logging.info(f"账户余额 - USDT: {usdt_balance:.2f} | BTC: {btc_balance:.6f}")
         
-        # 策略核心逻辑
+         # 策略核心逻辑
         if latest_rsi < latest_rsi_ma:
-            # 防止重复买入：只有当持有的BTC小于交易阈值时才买入
-            if btc_balance < TRADE_QTY:
-                required_usdt = TRADE_QTY * price
-                if usdt_balance >= required_usdt:
-                    logging.info(f"触发买入信号: RSI({latest_rsi:.2f}) < MA({latest_rsi_ma:.2f})")
-                    place_spot_order('buy')
-                else:
-                    logging.warning(f"余额不足，取消买入。需要USDT: {required_usdt:.2f}, 当前: {usdt_balance:.2f}")
+            # 只要 RSI 低于均线，且 USDT 余额够，就直接买入（无限补仓直到余额耗尽）
+            required_usdt = TRADE_QTY * price
+            if usdt_balance >= required_usdt:
+                logging.info(f"触发买入信号: RSI({latest_rsi:.2f}) < MA({latest_rsi_ma:.2f})")
+                place_spot_order('buy')
             else:
-                logging.info("满足买入信号，但当前已持有BTC，跳过交易")
+                logging.warning(f"余额不足，取消买入。需要USDT: {required_usdt:.2f}, 当前: {usdt_balance:.2f}")
                 
         elif latest_rsi > latest_rsi_ma:
             # 只有持有足够BTC时才触发卖出
