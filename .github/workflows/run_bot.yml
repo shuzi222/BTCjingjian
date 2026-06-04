@@ -23,7 +23,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           # 直接在此处指定安装官方库（使用最新的 okx 库）
-          pip install pandas numpy okx
+          pip install pandas numpy python-okx
 
       - name: 运行交易脚本
         env:
