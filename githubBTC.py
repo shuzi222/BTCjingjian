@@ -25,9 +25,9 @@ CONFIG_FILE = 'okx_config.json'
 # 内置交易参数
 # ==========================================
 SYMBOL = 'BTC-USDT'           # 现货交易对
-TIMEFRAME = '1D'             # K线周期（日线）
+TIMEFRAME = '1H'             # K线周期（一小时线）
 RSI_PERIOD = 14              # RSI周期
-RSI_MA_PERIOD = 10           # RSI均线周期
+RSI_MA_PERIOD = 14           # RSI均线周期
 TRADE_QTY = 0.00001            # 每次固定交易的BTC数量
 # ==========================================
 
