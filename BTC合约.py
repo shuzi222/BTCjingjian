@@ -1,20 +1,13 @@
-print(">>> 脚本启动中...", flush=True)
-
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+import sys
 import json
 import time
-import pandas as pd
-import numpy as np
-import okx.Trade as Trade
-import okx.MarketData as MarketData
-import okx.Account as Account
-import okx.PublicData as PublicData
 import traceback
 import uuid
 
-# 日志配置：同时输出到文件和 stdout（GitHub Actions 控制台可见）
+# 日志配置 —— 最早执行，确保后续任何错误都能写入文件
 logging.basicConfig(
     handlers=[
         RotatingFileHandler('btc_swap_bot.log', maxBytes=5*1024*1024, backupCount=3, encoding='utf-8'),
@@ -23,6 +16,21 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+
+logging.info(">>> 脚本启动中...")
+
+# 导入外部依赖（日志已就绪，import 失败也会被记录）
+try:
+    import pandas as pd
+    import numpy as np
+    import okx.Trade as Trade
+    import okx.MarketData as MarketData
+    import okx.Account as Account
+    import okx.PublicData as PublicData
+    logging.info("外部依赖导入成功")
+except ImportError as e:
+    logging.error(f"外部依赖导入失败: {e}")
+    sys.exit(1)
 
 CONFIG_FILE = 'okx_config.json'
 
@@ -354,6 +362,8 @@ def main():
             set_leverage()
             execute_trading_logic()
             logging.info("程序执行完毕")
+        else:
+            logging.error("OKX API 初始化失败，程序退出")
     except Exception as e:
         logging.error(f"主程序错误: {str(e)}\n{traceback.format_exc()}")
 
