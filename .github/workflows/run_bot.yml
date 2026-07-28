@@ -31,7 +31,7 @@ jobs:
           OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
           OKX_PASSPHRASE: ${{ secrets.OKX_PASSPHRASE }}
         run: |
-          python githubBTC.py
+          python BTC合约.py
 
       - name: 上传运行日志
         if: always()
