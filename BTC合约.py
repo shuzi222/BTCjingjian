@@ -1,3 +1,5 @@
+print(">>> 脚本启动中...", flush=True)
+
 import logging
 from logging.handlers import RotatingFileHandler
 import os
@@ -12,9 +14,12 @@ import okx.PublicData as PublicData
 import traceback
 import uuid
 
-# 日志配置
+# 日志配置：同时输出到文件和 stdout（GitHub Actions 控制台可见）
 logging.basicConfig(
-    handlers=[RotatingFileHandler('btc_swap_bot.log', maxBytes=5*1024*1024, backupCount=3, encoding='utf-8')],
+    handlers=[
+        RotatingFileHandler('btc_swap_bot.log', maxBytes=5*1024*1024, backupCount=3, encoding='utf-8'),
+        logging.StreamHandler()
+    ],
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
