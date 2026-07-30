@@ -14,7 +14,7 @@ import uuid
 
 # 日志配置
 logging.basicConfig(
-    handlers=[RotatingFileHandler('btc_swap_bot.log', maxBytes=5*1024*1024, backupCount=3, encoding='utf-8')],
+    handlers=[RotatingFileHandler('spot_trading_bot.log', maxBytes=5*1024*1024, backupCount=3, encoding='utf-8')],
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
