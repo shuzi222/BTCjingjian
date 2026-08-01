@@ -31,8 +31,8 @@ RSI_MA_PERIOD = 14            # RSI 均线周期
 LEVERAGE = 3                  # 杠杆倍数
 MARGIN_MODE = 'cross'         # 保证金模式: cross(全仓) / isolated(逐仓)
 TRADE_QTY = 0.0001            # 每次固定交易的 BTC 数量
-TAKE_PROFIT = 6               # 止盈百分比
-STOP_LOSS = 6                 # 止损百分比
+TAKE_PROFIT = 2               # 止盈百分比
+STOP_LOSS = 2                 # 止损百分比
 # ==========================================
 
 trade_client = None
