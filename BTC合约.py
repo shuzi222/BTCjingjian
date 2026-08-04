@@ -30,9 +30,14 @@ RSI_PERIOD = 14               # RSI 周期
 RSI_MA_PERIOD = 14            # RSI 均线周期
 LEVERAGE = 3                  # 杠杆倍数
 MARGIN_MODE = 'cross'         # 保证金模式: cross(全仓) / isolated(逐仓)
-TRADE_QTY = 0.0001            # 每次固定交易的 BTC 数量
-TAKE_PROFIT = 2               # 止盈百分比
-STOP_LOSS = 2                 # 止损百分比
+# ---------- 开多参数 ----------
+BUY_QTY = 0.0001              # 每次开多的 BTC 数量
+BUY_TAKE_PROFIT = 2           # 开多止盈百分比
+BUY_STOP_LOSS = 2             # 开多止损百分比
+# ---------- 平多参数 ----------
+SELL_QTY = 0.0001             # 每次平多的 BTC 数量
+# ---------- 通用开关 ----------
+ENABLE_TP_SL = True           # 开多时是否附带止盈止损单
 # ==========================================
 
 trade_client = None
@@ -179,42 +184,46 @@ def get_symbol_info(symbol):
 
 
 def place_order(side):
-    """side='buy'→开多(带止盈止损), side='sell'→平多(平掉全部持仓)"""
+    """side='buy'→开多(按BUY_QTY, 可选止盈止损), side='sell'→平多(按SELL_QTY, 不超过持仓)"""
     try:
         ct_val, min_qty, tick_sz, lot_sz = get_symbol_info(SYMBOL)
 
         if side == 'buy':
             # BTC 数量 → 合约张数
-            quantity_in_contracts = TRADE_QTY / ct_val
+            quantity_in_contracts = BUY_QTY / ct_val
             quantity_in_contracts = max(round(quantity_in_contracts / lot_sz) * lot_sz, min_qty)
             if quantity_in_contracts < min_qty:
                 logging.warning(f"下单失败: 张数 {quantity_in_contracts:.2f} < 最小 {min_qty}")
                 return None
 
-            current_price = state[SYMBOL]['current_price']
-            tp_price = round(current_price * (1 + TAKE_PROFIT / 100), -int(np.log10(tick_sz)))
-            sl_price = round(current_price * (1 - STOP_LOSS / 100), -int(np.log10(tick_sz)))
-
-            algo_order = {
-                'tpTriggerPx': str(tp_price), 'tpOrdPx': '-1',
-                'slTriggerPx': str(sl_price), 'slOrdPx': '-1',
-                'tpOrdKind': 'condition', 'slTriggerPxType': 'last', 'tpTriggerPxType': 'last'
-            }
             order_params = {
                 'instId': SYMBOL, 'tdMode': MARGIN_MODE,
                 'side': 'buy', 'posSide': 'long',
                 'ordType': 'market', 'sz': str(round(quantity_in_contracts, 2)),
-                'clOrdId': str(uuid.uuid4()).replace('-', '')[:32],
-                'attachAlgoOrds': [algo_order]
+                'clOrdId': str(uuid.uuid4()).replace('-', '')[:32]
             }
+
+            if ENABLE_TP_SL:
+                current_price = state[SYMBOL]['current_price']
+                tp_price = round(current_price * (1 + BUY_TAKE_PROFIT / 100), -int(np.log10(tick_sz)))
+                sl_price = round(current_price * (1 - BUY_STOP_LOSS / 100), -int(np.log10(tick_sz)))
+                algo_order = {
+                    'tpTriggerPx': str(tp_price), 'tpOrdPx': '-1',
+                    'slTriggerPx': str(sl_price), 'slOrdPx': '-1',
+                    'tpOrdKind': 'condition', 'slTriggerPxType': 'last', 'tpTriggerPxType': 'last'
+                }
+                order_params['attachAlgoOrds'] = [algo_order]
         else:
-            # 平多：平掉全部多头仓位
+            # 平多：按 SELL_QTY 平仓，不超过实际持仓
             _, long_qty, _ = get_position()
             if long_qty <= 0:
                 logging.info("无多头仓位，跳过平仓")
                 return None
-            quantity_in_contracts = long_qty / ct_val
-            quantity_in_contracts = max(round(quantity_in_contracts / lot_sz) * lot_sz, min_qty)
+            sell_contracts = min(SELL_QTY / ct_val, long_qty / ct_val)
+            quantity_in_contracts = max(round(sell_contracts / lot_sz) * lot_sz, min_qty)
+            if quantity_in_contracts < min_qty:
+                logging.warning(f"下单失败: 张数 {quantity_in_contracts:.2f} < 最小 {min_qty}")
+                return None
             order_params = {
                 'instId': SYMBOL, 'tdMode': MARGIN_MODE,
                 'side': 'sell', 'posSide': 'long',
@@ -308,10 +317,7 @@ def execute_trading_logic():
         # 策略核心逻辑（和现货版一致）
         if latest_rsi < latest_rsi_ma:
             # RSI 低于均线 → 开多
-            if long_qty > 0:
-                logging.info("已持有多头仓位，跳过开仓")
-                return True
-            required_usdt = TRADE_QTY * price / LEVERAGE
+            required_usdt = BUY_QTY * price / LEVERAGE
             if usdt_balance >= required_usdt:
                 logging.info(f"触发开多信号: RSI({latest_rsi:.2f}) < MA({latest_rsi_ma:.2f})")
                 place_order('buy')
