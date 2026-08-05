@@ -36,6 +36,9 @@ BUY_TAKE_PROFIT = 2           # 开多止盈百分比
 BUY_STOP_LOSS = 2             # 开多止损百分比
 # ---------- 平多参数 ----------
 SELL_QTY = 0.0001             # 每次平多的 BTC 数量
+# ---------- 信号阈值 ----------
+RSI_BUY_THRESHOLD = 4         # RSI 需低于 RSI_MA 多少才开多（正数=更大缓冲）
+RSI_SELL_THRESHOLD = 4        # RSI 需高于 RSI_MA 多少才平多（正数=更大缓冲）
 # ---------- 通用开关 ----------
 ENABLE_TP_SL = True           # 开多时是否附带止盈止损单
 # ==========================================
@@ -314,26 +317,32 @@ def execute_trading_logic():
             f"RSI: {latest_rsi:.2f} | RSI_MA: {latest_rsi_ma:.2f}"
         )
 
-        # 策略核心逻辑（和现货版一致）
-        if latest_rsi < latest_rsi_ma:
-            # RSI 低于均线 → 开多
+        # 策略核心逻辑：RSI 交叉 + 阈值缓冲
+        buy_gap = latest_rsi_ma - latest_rsi    # RSI 低于均线的幅度（正数=偏低）
+        sell_gap = latest_rsi - latest_rsi_ma   # RSI 高于均线的幅度（正数=偏高）
+
+        if buy_gap > RSI_BUY_THRESHOLD:
+            # RSI 低于均线超过阈值 → 开多
             required_usdt = BUY_QTY * price / LEVERAGE
             if usdt_balance >= required_usdt:
-                logging.info(f"触发开多信号: RSI({latest_rsi:.2f}) < MA({latest_rsi_ma:.2f})")
+                logging.info(f"触发开多信号: RSI({latest_rsi:.2f}) < MA({latest_rsi_ma:.2f}), "
+                             f"差值={buy_gap:.2f} > 阈值({RSI_BUY_THRESHOLD})")
                 place_order('buy')
             else:
                 logging.warning(f"余额不足，取消开多。需要保证金: {required_usdt:.2f} USDT, 当前: {usdt_balance:.2f}")
 
-        elif latest_rsi > latest_rsi_ma:
-            # RSI 高于均线 → 平多
+        elif sell_gap > RSI_SELL_THRESHOLD:
+            # RSI 高于均线超过阈值 → 平多
             if long_qty > 0:
-                logging.info(f"触发平多信号: RSI({latest_rsi:.2f}) > MA({latest_rsi_ma:.2f})")
+                logging.info(f"触发平多信号: RSI({latest_rsi:.2f}) > MA({latest_rsi_ma:.2f}), "
+                             f"差值={sell_gap:.2f} > 阈值({RSI_SELL_THRESHOLD})")
                 place_order('sell')
             else:
                 logging.info("满足平多信号，但当前无多头仓位，跳过")
 
         else:
-            logging.info("信号持平，无操作")
+            logging.info(f"信号未触发 | RSI: {latest_rsi:.2f} | MA: {latest_rsi_ma:.2f} | "
+                         f"买差: {buy_gap:.2f}(需>{RSI_BUY_THRESHOLD}) | 卖差: {sell_gap:.2f}(需>{RSI_SELL_THRESHOLD})")
 
         return True
     except Exception as e:
