@@ -218,7 +218,7 @@ def place_order(side):
                 order_params['attachAlgoOrds'] = [algo_order]
         else:
             # 平多：按 SELL_QTY 平仓，不超过实际持仓
-            _, long_qty, _ = get_position()
+            long_qty, _ = get_position()
             if long_qty <= 0:
                 logging.info("无多头仓位，跳过平仓")
                 return None
