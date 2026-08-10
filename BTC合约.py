@@ -40,7 +40,7 @@ SELL_QTY = 0.0001             # 每次平多的 BTC 数量
 RSI_BUY_THRESHOLD = 4         # RSI 需低于 RSI_MA 多少才开多（正数=更大缓冲）
 RSI_SELL_THRESHOLD = 4        # RSI 需高于 RSI_MA 多少才平多（正数=更大缓冲）
 # ---------- 通用开关 ----------
-ENABLE_TP_SL = True           # 开多时是否附带止盈止损单
+ENABLE_TP_SL = False           # 开多时是否附带止盈止损单
 # ==========================================
 
 trade_client = None
