@@ -31,7 +31,7 @@ RSI_MA_PERIOD = 14            # RSI 均线周期
 LEVERAGE = 3                  # 杠杆倍数
 MARGIN_MODE = 'cross'         # 保证金模式: cross(全仓) / isolated(逐仓)
 # ---------- 开多参数 ----------
-BUY_QTY = 0.0002              # 每次开多的 BTC 数量
+BUY_QTY = 0.0003              # 每次开多的 BTC 数量
 BUY_TAKE_PROFIT = 2           # 开多止盈百分比
 BUY_STOP_LOSS = 2             # 开多止损百分比
 # ---------- 平多参数 ----------
